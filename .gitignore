@@ -3,3 +3,5 @@
 *.sdf
 *.VC.opendb
 *.VC.db
+x64/
+.vs/

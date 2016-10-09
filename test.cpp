@@ -1,27 +1,40 @@
 #pragma once
 
+/*
+To stop boost from complaining: Unknown compiler version
+go to boost/config/compiler/visualc.hpp and replace:
+#if (_MSC_VER > 1800 && _MSC_FULL_VER > 190024210)
+or download:
+https%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost-binaries%2F1.62.0%2F&ts=1476039395&use_mirror=pilotfiber
+*/
 #include <iostream>
-#include "rxcpp/rx.hpp"
+#include <vector>
+#include <memory>
+#include <thread>
+#include <rxcpp/rx.hpp>
+#include <async++.h>
 #include "server_http.hpp"
 #include "client_http.hpp"
-#include <async++.h>
+#include "ioc.hpp"
+#include "rxweb.hpp"
+#include "subject.hpp"
+#include "observer.hpp"
+#include "subscriber.hpp"
 
-typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
-typedef SimpleWeb::Client<SimpleWeb::HTTP> HttpClient;
+using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
+using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
+
+std::hash<std::thread::id> hasher;
 
 namespace rx = rxcpp;
 namespace rxsub = rxcpp::subjects;
 
-namespace rxweb {
-  struct task {
-    task(std::shared_ptr<HttpServer::Request> req, std::shared_ptr<HttpServer::Response> resp) : request(req), response(resp) {}
-    std::shared_ptr<HttpServer::Response> response;
-    std::shared_ptr<HttpServer::Request> request;
-    std::vector<int> traceIds;
-  };  
-} 
-
 int main() {
+
+  IOCContainer container;
+  auto subject = container.GetInstance<rxweb::subject>();
+
+  // Create subject and subscribe on threadpool and make it "hot" immediately
   auto threads = rx::observe_on_event_loop();
   rxsub::subject<rxweb::task> sub;
   auto s = sub.get_subscriber();  
@@ -30,19 +43,23 @@ int main() {
     .publish()
     .as_dynamic();
   
-  //
+  // // factory pattern to consider?
+  // typedef rxcpp::resource<std::vector<int>> resource;
+  // auto resource_factory = []() {return resource(rxcpp::util::to_vector({ 1, 2, 3, 4, 5 })); };
   std::vector<rx::observable<rxweb::task>> v;
-
+  
   for (int s = 0; s < 5; s++) {
     rx::composite_subscription cs;
     auto subscriber = rx::make_subscriber<rxweb::task>(
       [cs, s](rxweb::task& t) {
       // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       std::cout << s << " subscriber" << std::endl;
-      std::cout << "async subscriber thread -> " << std::this_thread::get_id().hash() << std::endl;
+      std::cout << "async subscriber thread -> " << hasher(std::this_thread::get_id()) << std::endl;
     },
       [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
     );
+
+    // observers uses threadpool
     // o.subscribe(subscriber);
     // auto w = o.observe_on(threads).as_dynamic();
     auto observer = o.observe_on(threads)
@@ -60,7 +77,7 @@ int main() {
     [cs](rxweb::task& t) {
     // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     // std::cout << t.request->content.string() << std::endl;
-    std::cout << "last async thread -> " << std::this_thread::get_id().hash() << std::endl;
+    std::cout << "last async thread -> " << hasher(std::this_thread::get_id()) << std::endl;
     std::copy(t.traceIds.begin(), t.traceIds.end(), std::ostream_iterator<int>(std::cout, " "));
     std::cout << std::endl;
     const std::string ok("OK");
@@ -69,7 +86,7 @@ int main() {
     [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
   );
   
-  
+  // create a new thread for every chunk {rxweb::task}
   rx::observable<>::iterate(v)
     .concat(rx::observe_on_new_thread())
     //.as_blocking()
@@ -105,7 +122,7 @@ int main() {
   });
   
   // Get server thread info
-  std::cout << "server thread -> " << server_thread.get_id().hash() << std::endl;
+  std::cout << "server thread -> " << hasher(server_thread.get_id()) << std::endl;
   server_thread.join();
   
   return 0;
