@@ -1,3 +1,5 @@
 *.opensdf
 *.suo
 *.sdf
+*.VC.opendb
+*.VC.db
