@@ -5,3 +5,5 @@
 *.VC.db
 x64/
 .vs/
+Debug/
+Release/
