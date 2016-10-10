@@ -15,7 +15,6 @@ https%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost-binaries%2F1.62
 #include <async++.h>
 #include "server_http.hpp"
 #include "client_http.hpp"
-#include "ioc.hpp"
 #include "rxweb.hpp"
 #include "subject.hpp"
 #include "observer.hpp"
@@ -31,9 +30,11 @@ namespace rxsub = rxcpp::subjects;
 
 int main() {
 
-  IOCContainer container;
-  auto subject = container.GetInstance<rxweb::subject>();
+  rxweb::subject sub;
+  auto s = sub.subscriber();
+  auto o = sub.observable();
 
+  /*
   // Create subject and subscribe on threadpool and make it "hot" immediately
   auto threads = rx::observe_on_event_loop();
   rxsub::subject<rxweb::task> sub;
@@ -42,13 +43,17 @@ int main() {
   o.subscribe_on(threads)
     .publish()
     .as_dynamic();
-  
+  */
+
   // // factory pattern to consider?
   // typedef rxcpp::resource<std::vector<int>> resource;
   // auto resource_factory = []() {return resource(rxcpp::util::to_vector({ 1, 2, 3, 4, 5 })); };
+  
+  // This vector holds all observables that we must wait for before responding to client. 
   std::vector<rx::observable<rxweb::task>> v;
   
   for (int s = 0; s < 5; s++) {
+    // Create subscribers
     rx::composite_subscription cs;
     auto subscriber = rx::make_subscriber<rxweb::task>(
       [cs, s](rxweb::task& t) {
@@ -59,16 +64,12 @@ int main() {
       [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
     );
 
-    // observers uses threadpool
-    // o.subscribe(subscriber);
-    // auto w = o.observe_on(threads).as_dynamic();
-    auto observer = o.observe_on(threads)
-      .filter([](rxweb::task& t) { std::cout << " -> filter" << std::endl; return true; })
-      .map([](rxweb::task& t) { std::cout << " -> map" << std::endl; t.traceIds.push_back(1); return t; })
-      .as_dynamic();
-
-    observer.subscribe(subscriber);
-    v.push_back(observer);
+    // Create observers, they will act like route middlware.
+    rxweb::observer observer;
+    auto observable = observer.observe_on(o);
+    
+    observable.subscribe(subscriber);
+    v.push_back(observable);
   }
 
   // wait for all to finish
@@ -94,8 +95,9 @@ int main() {
   
   HttpServer server(8080, 1);
 
-  server.default_resource["POST"] = [&server, &sub](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
-    auto s = sub.get_subscriber();
+  // server.default_resource["POST"] = [&server, &sub](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
+  server.default_resource["POST"] = [&server, &s](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
+    // auto s = sub.get_subscriber();
     auto t = rxweb::task{ request, response };
     s.on_next(t);
   };
