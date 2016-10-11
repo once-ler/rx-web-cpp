@@ -23,8 +23,6 @@ https%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost-binaries%2F1.62
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
 
-std::hash<std::thread::id> hasher;
-
 namespace rx = rxcpp;
 namespace rxsub = rxcpp::subjects;
 
@@ -33,17 +31,6 @@ int main() {
   rxweb::subject sub;
   auto s = sub.subscriber();
   auto o = sub.observable();
-
-  /*
-  // Create subject and subscribe on threadpool and make it "hot" immediately
-  auto threads = rx::observe_on_event_loop();
-  rxsub::subject<rxweb::task> sub;
-  auto s = sub.get_subscriber();  
-  auto o = sub.get_observable();
-  o.subscribe_on(threads)
-    .publish()
-    .as_dynamic();
-  */
 
   // // factory pattern to consider?
   // typedef rxcpp::resource<std::vector<int>> resource;
@@ -54,22 +41,13 @@ int main() {
   
   for (int s = 0; s < 5; s++) {
     // Create subscribers
-    rx::composite_subscription cs;
-    auto subscriber = rx::make_subscriber<rxweb::task>(
-      [cs, s](rxweb::task& t) {
-      // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-      std::cout << s << " subscriber" << std::endl;
-      std::cout << "async subscriber thread -> " << hasher(std::this_thread::get_id()) << std::endl;
-    },
-      [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
-    );
+    rxweb::subscriber subr(s);
+    auto subscriber = subr.make();
 
     // Create observers, they will act like route middlware.
-    rxweb::observer observer;
-    auto observable = observer.observe_on(o);
-    
-    observable.subscribe(subscriber);
-    v.push_back(observable);
+    rxweb::observer observer(o);
+    observer.subscribe(subscriber);
+    v.push_back(observer.observable());
   }
 
   // wait for all to finish

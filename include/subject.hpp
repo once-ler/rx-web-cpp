@@ -1,10 +1,8 @@
 #pragma once
 
-#include <rxcpp/rx.hpp>
 #include "rxweb.hpp"
 
-namespace rx = rxcpp;
-namespace rxsub = rxcpp::subjects;
+using Subject = rxcpp::subjects::subject<rxweb::task>;
 
 namespace rxweb {
   
@@ -12,17 +10,18 @@ namespace rxweb {
   public:
     explicit subject() {
       // Create subject and subscribe on threadpool and make it "hot" immediately
-      auto threads = rx::observe_on_event_loop();      
-      // auto s = sub.get_subscriber();
       auto o = sub.get_observable();
-      o.subscribe_on(threads)
+      o.subscribe_on(RxEventLoop)
         .publish()
         .as_dynamic();
     }
-    rxcpp::observable<rxweb::task> observable() { return sub.get_observable(); }
-    rxcpp::subscriber<rxweb::task> subscriber() { return sub.get_subscriber(); }
+
+    decltype(auto) observable() { return sub.get_observable(); }
+    
+    decltype(auto) subscriber() { return sub.get_subscriber(); }
+  
   private:
-    rxsub::subject<rxweb::task> sub;
+    Subject sub;
   };
 
 }
