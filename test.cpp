@@ -32,21 +32,30 @@ int main() {
   auto s = sub.subscriber();
   auto o = sub.observable();
 
+  // Create subscribers
+  rxweb::subscriber subr;
+  auto rxwebSubscriber = subr.create();
+
   // // factory pattern to consider?
-  // typedef rxcpp::resource<std::vector<int>> resource;
-  // auto resource_factory = []() {return resource(rxcpp::util::to_vector({ 1, 2, 3, 4, 5 })); };
+  /*
+  typedef rxcpp::resource<std::vector<int>> resource;
+  auto resource_factory = [](){return resource(rxcpp::util::to_vector({1, 2, 3, 4, 5}));};
+  auto observable_factory = [](resource res){return rxcpp::observable<>::iterate(res.get());};
+  auto values = rxcpp::observable<>::scope(resource_factory, observable_factory);
+  values.
+      subscribe(
+          [](int v){printf("OnNext: %d\n", v);},
+          [](){printf("OnCompleted\n");});
+  printf("//! [scope sample]\n");
+  */
   
   // This vector holds all observables that we must wait for before responding to client. 
   std::vector<rx::observable<rxweb::task>> v;
   
   for (int s = 0; s < 5; s++) {
-    // Create subscribers
-    rxweb::subscriber subr(s);
-    auto subscriber = subr.make();
-
     // Create observers, they will act like route middlware.
     rxweb::observer observer(o);
-    observer.subscribe(subscriber);
+    observer.subscribe(rxwebSubscriber);
     v.push_back(observer.observable());
   }
 
@@ -73,9 +82,7 @@ int main() {
   
   HttpServer server(8080, 1);
 
-  // server.default_resource["POST"] = [&server, &sub](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
   server.default_resource["POST"] = [&server, &s](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
-    // auto s = sub.get_subscriber();
     auto t = rxweb::task{ request, response };
     s.on_next(t);
   };

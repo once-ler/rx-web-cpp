@@ -19,6 +19,8 @@ namespace rxweb {
     decltype(auto) observable() { return sub.get_observable(); }
     
     decltype(auto) subscriber() { return sub.get_subscriber(); }
+
+    decltype(auto) get() { return sub; }
   
   private:
     Subject sub;

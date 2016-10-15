@@ -11,7 +11,7 @@ namespace rxweb {
 
     }
 
-    decltype(auto) make() {
+    decltype(auto) create() {
       rxcpp::composite_subscription cs;
       return rxcpp::make_subscriber<rxweb::task>(
         [cs, this](rxweb::task& t) {
