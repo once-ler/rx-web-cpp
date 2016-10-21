@@ -19,6 +19,7 @@ https%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost-binaries%2F1.62
 #include "subject.hpp"
 #include "observer.hpp"
 #include "subscriber.hpp"
+#include "route.hpp"
 
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
@@ -32,7 +33,8 @@ int main() {
   auto s = sub.subscriber();
   auto o = sub.observable();
 
-  // Create subscribers
+  // Create subscriber to act as proxy to incoming web request.
+  // Subscriber will broadcast to observers.
   rxweb::subscriber subr;
   auto rxwebSubscriber = subr.create();
 
@@ -49,15 +51,23 @@ int main() {
   printf("//! [scope sample]\n");
   */
   
+  //
+  
+  std::vector<Route> m = {
+    { 
+      [](rxweb::task& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](rxweb::task& t)->rxweb::task& { std::cout << "aaa\n"; return t; } }
+  };
+
   // This vector holds all observables that we must wait for before responding to client. 
   std::vector<rx::observable<rxweb::task>> v;
   
-  for (int s = 0; s < 5; s++) {
+  std::for_each(m.begin(), m.end(), [&](auto& route) {
     // Create observers, they will act like route middlware.
-    rxweb::observer observer(o);
+    rxweb::observer observer(o, route.filterFunc, route.mapFunc);
     observer.subscribe(rxwebSubscriber);
     v.push_back(observer.observable());
-  }
+  });
 
   // wait for all to finish
   rx::composite_subscription cs;
@@ -76,7 +86,8 @@ int main() {
   
   // create a new thread for every chunk {rxweb::task}
   rx::observable<>::iterate(v)
-    .concat(rx::observe_on_new_thread())
+    .concat(rx::observe_on_event_loop())
+    //.concat(rx::observe_on_new_thread())
     //.as_blocking()
     .subscribe(subscriber);
   

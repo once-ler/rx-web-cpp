@@ -139,7 +139,6 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ioc.hpp" />
     <ClInclude Include="include\observer.hpp" />
     <ClInclude Include="include\rxweb.hpp" />
     <ClInclude Include="include\subject.hpp" />
