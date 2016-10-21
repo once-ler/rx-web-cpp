@@ -4,15 +4,16 @@
 #include <vector>
 #include <memory>;
 #include <rxcpp/rx.hpp>
-#include "server_http.hpp"
+
+using namespace std;
 
 decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
-
-std::hash<std::thread::id> hasher;
 
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 using Request = std::shared_ptr<HttpServer::Request>;
 using Response = std::shared_ptr<HttpServer::Response>;
+
+std::hash<std::thread::id> hasher;
 
 namespace rxweb {
   
@@ -23,4 +24,13 @@ namespace rxweb {
     std::vector<int> traceIds;
   };
 
+  using FilterFunc = std::function<bool(rxweb::task&)>;
+  using MapFunc = std::function<rxweb::task&(rxweb::task&)>;
+
+  struct Route {
+    FilterFunc filterFunc;
+    MapFunc mapFunc;
+    Route(FilterFunc _filterFunc, MapFunc _mapFunc) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}
+  };
+  
 }

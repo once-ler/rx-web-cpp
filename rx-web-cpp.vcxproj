@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="include\observer.hpp" />
     <ClInclude Include="include\rxweb.hpp" />
+    <ClInclude Include="include\server.hpp" />
     <ClInclude Include="include\subject.hpp" />
     <ClInclude Include="include\subscriber.hpp" />
   </ItemGroup>

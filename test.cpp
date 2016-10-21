@@ -19,7 +19,7 @@ https%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost-binaries%2F1.62
 #include "subject.hpp"
 #include "observer.hpp"
 #include "subscriber.hpp"
-#include "route.hpp"
+#include "server.hpp"
 
 using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
@@ -53,7 +53,7 @@ int main() {
   
   //
   
-  std::vector<Route> m = {
+  std::vector<rxweb::Route> m = {
     { 
       [](rxweb::task& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
       [](rxweb::task& t)->rxweb::task& { std::cout << "aaa\n"; return t; } }
