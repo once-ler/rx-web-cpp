@@ -1,36 +1,39 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <memory>
-#include <rxcpp/rx.hpp>
+decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
+decltype(auto) RxNewThread = rxcpp::observe_on_new_thread();
 
 using namespace std;
 
-decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
-
-std::hash<std::thread::id> hasher;
-
 namespace rxweb {
   
+  static string version = "0.1.0";
+
   template<typename T>
   struct task {
+    using SocketType = SimpleWeb::ServerBase<T>;
+
     task(
-      shared_ptr<typename SimpleWeb::ServerBase<T>::Request> req, 
-      shared_ptr<typename SimpleWeb::ServerBase<T>::Response> resp
+      shared_ptr<typename SocketType::Request> req,
+      shared_ptr<typename SocketType::Response> resp
     ) : request(req), response(resp) {}
-    shared_ptr<typename SimpleWeb::ServerBase<T>::Response> response;
-    shared_ptr<typename SimpleWeb::ServerBase<T>::Request> request;
+    shared_ptr<typename SocketType::Response> response;
+    shared_ptr<typename SocketType::Request> request;
     std::vector<int> traceIds;
   };
 
   template<typename T>
-  struct Route {
-    std::function<bool(rxweb::task<T>&)> filterFunc;
-    std::function<rxweb::task&(rxweb::task<T>&)> mapFunc;
-    Route(
-      std::function<bool(rxweb::task<T>&)> _filterFunc, 
-      std::function<rxweb::task&(rxweb::task<T>&)> _mapFunc
+  struct route {
+    using SocketType = SimpleWeb::ServerBase<T>;
+    using RxWebTask = rxweb::task<T>;
+    using FilterFunc = std::function<bool(RxWebTask&)>;
+    using MapFunc = std::function<RxWebTask&(RxWebTask&)>;
+
+    FilterFunc filterFunc;
+    MapFunc mapFunc;
+    route(
+      FilterFunc _filterFunc,
+      MapFunc _mapFunc
     ) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}
   };
   

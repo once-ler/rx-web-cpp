@@ -1,24 +1,18 @@
 #pragma once
 
-#include <functional>
 #include "rxweb.hpp"
-
-using FilterFunc = std::function<bool(rxweb::task&)>;
-using MapFunc = std::function<rxweb::task&(rxweb::task&)>;
-
-using Observable = rxcpp::observable<rxweb::task>;
 
 namespace rxweb {
   
+  template<typename T>
   class observer {
-  public:
-    explicit observer(Observable o) {
-      _observer = o.observe_on(RxEventLoop)
-        .filter([](rxweb::task& t) { std::cout << " -> filter" << std::endl; return true; })
-        .map([](rxweb::task& t) { std::cout << " -> map" << std::endl; t.traceIds.push_back(1); return t; })
-        .as_dynamic();
-    }
+    using SocketType = SimpleWeb::ServerBase<T>;
+    using RxWebTask = rxweb::task<T>;
+    using FilterFunc = std::function<bool(RxWebTask&)>;
+    using MapFunc = std::function<RxWebTask&(RxWebTask&)>;
+    using Observable = rxcpp::observable<RxWebTask>;
 
+  public:
     explicit observer(Observable o, FilterFunc filterFunc, MapFunc mapFunc) {
       _observer = o.observe_on(RxEventLoop)
         .filter(filterFunc)
@@ -38,4 +32,5 @@ namespace rxweb {
   private:
     Observable _observer;
   };
+
 }

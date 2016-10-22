@@ -2,12 +2,15 @@
 
 #include "rxweb.hpp"
 
-using Subject = rxcpp::subjects::subject<rxweb::task>;
-
 namespace rxweb {
   
+  template<typename T>
   class subject {
   public:
+    // using SocketType = SimpleWeb::ServerBase<T>;
+    using RxWebTask = rxweb::task<T>;
+    using Subject = rxcpp::subjects::subject<RxWebTask>;
+
     explicit subject() {
       // Create subject and subscribe on threadpool and make it "hot" immediately
       auto o = sub.get_observable();
