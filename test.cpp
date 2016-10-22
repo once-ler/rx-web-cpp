@@ -29,6 +29,18 @@ namespace rxsub = rxcpp::subjects;
 
 int main() {
 
+  {
+    rxweb::server<SimpleWeb::HTTP> server(8080, 1);
+    server.routes = {
+      {
+        [](rxweb::task<SimpleWeb::HTTP>& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+        [](rxweb::task<SimpleWeb::HTTP>& t)->rxweb::task<SimpleWeb::HTTP>& { std::cout << "aaa\n"; return t; }
+      }
+    };
+    server.start();
+  }
+  return 0;
+
   rxweb::subject sub;
   auto s = sub.subscriber();
   auto o = sub.observable();
@@ -36,7 +48,7 @@ int main() {
   // Create subscriber to act as proxy to incoming web request.
   // Subscriber will broadcast to observers.
   rxweb::subscriber subr;
-  auto rxwebSubscriber = subr.create();
+  auto rxwebSubscriber = subr.create<SimpleWeb::HTTP>();
 
   // // factory pattern to consider?
   /*

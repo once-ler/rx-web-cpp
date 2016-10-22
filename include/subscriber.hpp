@@ -11,10 +11,11 @@ namespace rxweb {
 
     }
 
+    template<typename T>
     decltype(auto) create() {
       rxcpp::composite_subscription cs;
-      return rxcpp::make_subscriber<rxweb::task>(
-        [cs, this](rxweb::task& t) {
+      return rxcpp::make_subscriber<rxweb::task<T>>(
+        [cs, this](rxweb::task<T>& t) {
         // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << i_ << " subscriber" << std::endl;
         std::cout << "async subscriber thread -> " << hasher(std::this_thread::get_id()) << std::endl;

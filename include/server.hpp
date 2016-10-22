@@ -10,36 +10,46 @@
 #include "observer.hpp"
 #include "subscriber.hpp"
 
-using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
-
 namespace rx = rxcpp;
 namespace rxsub = rxcpp::subjects;
 
 namespace rxweb {
+  
+  template<typename T>
   class server {
   public:
-    std::vector<Route> routes;
+    // User provides custom Route
+    vector<rxweb::Route> routes;
 
-    server(vector<Route> _routes) : routes(_routes) {
-      // Create subscriber to act as proxy to incoming web request.
-      // Subscriber will broadcast to observers.
-      rxwebSubscriber = subr.create();
-
-      createObserverAll();
+    explicit server<T>(int _port, int _threads) : port(_port), threads(_threads) {
+      _server = make_shared<SimpleWeb::Server<T>>(port, threads);
     }
 
-    HttpServer create() {
-      // wait for all to finish
+    explicit server<T>(
+      int _port, 
+      int _threads, 
+      const string _certFile, 
+      const string _privateKeyFile
+      ) : port(_port), threads(_threads), certFile(_certFile), privateKeyFile(_privateKeyFile) {
+      // Ignore certs if HTTP is specified.
+      if (std::is_same<T, SimpleWeb::HTTP>) {
+        _server = make_shared<SimpleWeb::Server<T>>(port, threads);
+      } else {
+        _server = make_shared<SimpleWeb::Server<T>>(port, threads, sertFile, privateKeyFile);
+      }
+    }
+    
+    void start() {
+      // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
+      makeObserversFromRoutes();
+
+      // Wait for all observers to finish.
       rx::composite_subscription cs;
       auto subscriber = rx::make_subscriber<rxweb::task>(
         [&cs](rxweb::task& t) {
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        // std::cout << t.request->content.string() << std::endl;
-        std::cout << "last async thread -> " << hasher(std::this_thread::get_id()) << std::endl;
-        std::copy(t.traceIds.begin(), t.traceIds.end(), std::ostream_iterator<int>(std::cout, " "));
-        std::cout << std::endl;
+        
         const std::string ok("OK");
-        *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << ok.length() << "\r\n\r\n" << ok;
+        *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << (t.response->size() + ok.length()) << "\r\n\r\n" << ok;
       },
         [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
       );
@@ -48,46 +58,40 @@ namespace rxweb {
       rx::observable<>::iterate(v)
         .concat(rx::observe_on_event_loop())
         //.concat(rx::observe_on_new_thread())
-        //.as_blocking()
         .subscribe(subscriber);
 
-      HttpServer server(8080, 1);
-
-      server.default_resource["POST"] = [&server, this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
+      // Defaults: 1 endpoint for POST/GET
+      _server->default_resource["POST"] = [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request) {
         auto t = rxweb::task{ request, response };
         sub.subscriber().on_next(t);
       };
 
-      return server;
-    }
+      _server->default_resource["GET"] = [](shared_ptr<SimpleWeb::ServerBase<T>::Response> response, shared_ptr<SimpleWeb::ServerBase<T>::Request> request) {
+        *response << "HTTP/1.1 200 OK\r\nContent-Length: " << 0 << "\r\n\r\n";
+      };
 
-    void addRoute(Route route) {
-      routes.emplace_back(route);
-      createObserver(route);
+      _server->start();
     }
-
   private:
+    int port, threads;
+    std::string certFile, privateKeyFile, socketType;
+    shared_ptr<SimpleWeb::Server<T>> _server;
+    
     rxweb::subject sub;
-
-    rxweb::subscriber subr;
-    decltype(subr.create()) rxwebSubscriber;
-    // This vector holds all observables that we must wait for before responding to client. 
     std::vector<rx::observable<rxweb::task>> v;
 
-    // Create observers, they will act like route middlware.
-    void createObserverAll() {
+    void makeObserversFromRoutes() {
+      // Create subscriber to act as proxy to incoming web request.
+      // Subscriber will broadcast to observers.
+      rxweb::subscriber subr;
+      auto rxwebSubscriber = subr.create();
+
+      // Create Observers that react to subscriber broadcast.
       std::for_each(routes.begin(), routes.end(), [&](auto& route) {
         rxweb::observer observer(sub.observable(), route.filterFunc, route.mapFunc);
         observer.subscribe(rxwebSubscriber);
         v.emplace_back(observer.observable());
       });
     }
-
-    void createObserver(Route route) {
-      rxweb::observer observer(sub.observable(), route.filterFunc, route.mapFunc);
-      observer.subscribe(rxwebSubscriber);
-      v.emplace_back(observer.observable());
-    }
-
   };
 }
