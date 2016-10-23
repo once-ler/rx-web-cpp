@@ -18,12 +18,12 @@ namespace rxweb {
     using RxWebTask = rxweb::task<T>;
     using RxWebObserver = rxweb::observer<T>;
     using RxWebSubscriber = rxweb::subscriber<T>;
-    using RxWebRoute = rxweb::route<T>;
+    using RxWebMiddleware = rxweb::middleware<T>;
     using WebServer = SimpleWeb::Server<T>;
     
   public:
     // User provides custom Route
-    vector<RxWebRoute> routes;
+    vector<RxWebMiddleware> middlewares;
 
     explicit server(int _port, int _threads) : port(_port), threads(_threads) {
       _server = make_shared<WebServer>(port, threads);
@@ -45,13 +45,15 @@ namespace rxweb {
     
     void start() {
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
-      makeObserversFromRoutes();
+      makeObserversFromMiddlewares();
 
       // Wait for all observers to finish.
       rxcpp::composite_subscription cs;
       auto subscriber = rxcpp::make_subscriber<RxWebTask>(
         [&cs](RxWebTask t) {
         
+        std::cout << (*(t.ss)).str() << std::endl;
+
         const std::string ok("OK");
         *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << (t.response->size() + ok.length()) << "\r\n\r\n" << ok;
       },
@@ -60,7 +62,7 @@ namespace rxweb {
 
       // create a new thread for every chunk {rxweb::task}
       rxcpp::observable<>::iterate(v)
-        .concat(RxEventLoop)
+        .merge(RxEventLoop)
         //.concat(RxNewThread)
         .subscribe(subscriber);
 
@@ -84,17 +86,17 @@ namespace rxweb {
     rxweb::subject<T> sub;
     std::vector<rxcpp::observable<RxWebTask>> v;
 
-    void makeObserversFromRoutes() {
+    void makeObserversFromMiddlewares() {
       // Create subscriber to act as proxy to incoming web request.
       // Subscriber will broadcast to observers.
       RxWebSubscriber subr;
       auto rxwebSubscriber = subr.create();
 
       // Create Observers that react to subscriber broadcast.
-      std::for_each(routes.begin(), routes.end(), [&](auto& route) {
+      std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
         RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
         observer.subscribe(rxwebSubscriber);
-        v.emplace_back(observer.observable());
+        // v.emplace_back(observer.observable());
       });
     }
   };

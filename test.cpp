@@ -16,13 +16,39 @@ using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
 std::hash<std::thread::id> hasher;
 
 int main() {
+
   using WebTask = rxweb::task<SimpleWeb::HTTP>;
 
+  using MapFunc = std::function<WebTask&(WebTask&)>;
+
   rxweb::server<SimpleWeb::HTTP> server(8080, 1);
-  server.routes = {
+  server.middlewares = {
     {
       [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
-      [](WebTask& t)->WebTask& { std::cout << "aaa\n"; return t; }
+      [](WebTask& t)->WebTask& { std::cout << "1\n"; *(t.ss) << "1\n"; return t; }
+    },
+    {
+      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& { 
+        std::cout << "2\n";        
+        /*
+        o.concat_map(
+          [](RxWebTask t) { return rxcpp::observable<>::from<RxWebTask>(t); },
+          [](RxWebTask t, RxWebTask s) { cout << "COUNT\n"; return t; }
+        ).subscribe([](RxWebTask t) {cout << "DONE\n"; });
+        */
+        *(t.ss) << "22\n"; 
+        *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << 2 << "\r\n\r\nOK";
+        return t; 
+      }
+    },
+    {
+      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/json") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& { std::cout << "3\n"; *(t.ss) << "333\n"; return t; }
+    },
+    {
+      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& { std::cout << "4\n"; *(t.ss) << "4444\n"; return t; }
     }
   };
 

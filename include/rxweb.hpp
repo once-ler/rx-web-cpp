@@ -16,14 +16,16 @@ namespace rxweb {
     task(
       shared_ptr<typename SocketType::Request> req,
       shared_ptr<typename SocketType::Response> resp
-    ) : request(req), response(resp) {}
+    ) : request(req), response(resp) {
+      ss = make_shared<stringstream>();
+    }
     shared_ptr<typename SocketType::Response> response;
     shared_ptr<typename SocketType::Request> request;
-    std::vector<int> traceIds;
+    shared_ptr<std::stringstream> ss;
   };
 
   template<typename T>
-  struct route {
+  struct middleware {
     using SocketType = SimpleWeb::ServerBase<T>;
     using RxWebTask = rxweb::task<T>;
     using FilterFunc = std::function<bool(RxWebTask&)>;
@@ -31,7 +33,8 @@ namespace rxweb {
 
     FilterFunc filterFunc;
     MapFunc mapFunc;
-    route(
+    
+    middleware(
       FilterFunc _filterFunc,
       MapFunc _mapFunc
     ) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}

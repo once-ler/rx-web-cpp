@@ -13,11 +13,11 @@ namespace rxweb {
     using Observable = rxcpp::observable<RxWebTask>;
 
   public:
+    template<typename... Funcs>
     explicit observer(Observable o, FilterFunc filterFunc, MapFunc mapFunc) {
       _observer = o.observe_on(RxEventLoop)
         .filter(filterFunc)
-        .map(mapFunc)
-        .as_dynamic();
+        .map(mapFunc);
     }
 
     template<class Arg0>
