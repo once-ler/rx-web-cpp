@@ -22,9 +22,12 @@ namespace rxweb {
     using WebServer = SimpleWeb::Server<T>;
     
   public:
-    // User provides custom Route
+    // User provides custom Middleware.
     vector<RxWebMiddleware> middlewares;
 
+    // Middleware that will handle the HTTP/S response. 
+    RxWebMiddleware onNext;
+    
     explicit server(int _port, int _threads) : port(_port), threads(_threads) {
       _server = make_shared<WebServer>(port, threads);
     }
@@ -44,26 +47,21 @@ namespace rxweb {
     }
     
     void start() {
+      
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
       makeObserversFromMiddlewares();
 
       // Wait for all observers to finish.
-      rxcpp::composite_subscription cs;
+      // onNext is user defined and will perform HTTP/S response.
       auto subscriber = rxcpp::make_subscriber<RxWebTask>(
-        [&cs](RxWebTask t) {
-        
-        std::cout << (*(t.ss)).str() << std::endl;
-
-        const std::string ok("OK");
-        *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << (t.response->size() + ok.length()) << "\r\n\r\n" << ok;
-      },
+        onNext.tapFunc,
         [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
       );
 
       // create a new thread for every chunk {rxweb::task}
       rxcpp::observable<>::iterate(v)
-        .merge(RxEventLoop)
-        //.concat(RxNewThread)
+        //.concat(RxEventLoop)
+        .concat(RxNewThread)        
         .subscribe(subscriber);
 
       // Defaults: 1 endpoint for POST/GET
@@ -86,9 +84,22 @@ namespace rxweb {
     rxweb::subject<T> sub;
     std::vector<rxcpp::observable<RxWebTask>> v;
 
+    /*
+      Using makeObserversFromMiddlewares() will wait for all middlewares to complete.
+    */
     void makeObserversFromMiddlewares() {
-      // Create subscriber to act as proxy to incoming web request.
-      // Subscriber will broadcast to observers.
+      // Create Observers that react to subscriber broadcast.
+      std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
+        RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
+        v.emplace_back(observer.observable());
+      });
+    }
+
+    /*
+      Using makeObserversAndSubscribeFromMiddlewares() will not wait for all middlewares to complete.
+    */
+    void makeObserversAndSubscribeFromMiddlewares() {
+      // No subscription, observers does nothing.
       RxWebSubscriber subr;
       auto rxwebSubscriber = subr.create();
 
@@ -96,7 +107,6 @@ namespace rxweb {
       std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
         RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
         observer.subscribe(rxwebSubscriber);
-        // v.emplace_back(observer.observable());
       });
     }
   };

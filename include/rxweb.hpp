@@ -7,7 +7,7 @@ using namespace std;
 
 namespace rxweb {
   
-  static string version = "0.1.0";
+  static string version = "0.2.0";
 
   template<typename T>
   struct task {
@@ -30,14 +30,20 @@ namespace rxweb {
     using RxWebTask = rxweb::task<T>;
     using FilterFunc = std::function<bool(RxWebTask&)>;
     using MapFunc = std::function<RxWebTask&(RxWebTask&)>;
+    using TapFunc = std::function<void(RxWebTask&)>;
 
     FilterFunc filterFunc;
     MapFunc mapFunc;
+    TapFunc tapFunc;
     
+    middleware() = default;
+
     middleware(
       FilterFunc _filterFunc,
       MapFunc _mapFunc
     ) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}
+
+    middleware(TapFunc _tapFunc) : tapFunc(_tapFunc) {}
   };
   
 }

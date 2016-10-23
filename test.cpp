@@ -22,15 +22,22 @@ int main() {
   using MapFunc = std::function<WebTask&(WebTask&)>;
 
   rxweb::server<SimpleWeb::HTTP> server(8080, 1);
+  
+  server.onNext = { 
+    [](WebTask& t) {
+      const std::string ok("OK");
+      *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << ((*(t.ss)).str().size() + ok.length()) << "\r\n\r\n" << ok << (*(t.ss)).str();
+    } 
+  };
+
   server.middlewares = {
     {
-      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
-      [](WebTask& t)->WebTask& { std::cout << "1\n"; *(t.ss) << "1\n"; return t; }
+      [](WebTask& t)->bool { if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& { *(t.ss) << "1\n"; return t; }
     },
     {
-      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](WebTask& t)->bool { if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
       [](WebTask& t)->WebTask& { 
-        std::cout << "2\n";        
         /*
         o.concat_map(
           [](RxWebTask t) { return rxcpp::observable<>::from<RxWebTask>(t); },
@@ -38,17 +45,17 @@ int main() {
         ).subscribe([](RxWebTask t) {cout << "DONE\n"; });
         */
         *(t.ss) << "22\n"; 
-        *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << 2 << "\r\n\r\nOK";
+        // *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << 2 << "\r\n\r\nOK";
         return t; 
       }
     },
     {
-      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/json") == std::string::npos) return false; return true; },
-      [](WebTask& t)->WebTask& { std::cout << "3\n"; *(t.ss) << "333\n"; return t; }
+      [](WebTask& t)->bool { if (t.request->path.rfind("/json") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& {*(t.ss) << "333\n"; return t; }
     },
     {
-      [](WebTask& t)->bool { std::cout << t.request->path << std::endl; if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
-      [](WebTask& t)->WebTask& { std::cout << "4\n"; *(t.ss) << "4444\n"; return t; }
+      [](WebTask& t)->bool { if (t.request->path.rfind("/string") == std::string::npos) return false; return true; },
+      [](WebTask& t)->WebTask& { *(t.ss) << "4444\n"; return t; }
     }
   };
 
@@ -63,7 +70,7 @@ int main() {
   std::string json_string = "{\"firstName\": \"John\",\"lastName\": \"Smith\",\"age\": 25}";
   
   // Use async++
-  async::parallel_for(async::irange(0, 100), [&json_string](int x) {
+  async::parallel_for(async::irange(0, 5), [&json_string](int x) {
     try {
       HttpClient client("localhost:8080");
       auto r2 = client.request("POST", "/string", json_string);

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "rxweb.hpp"
+#include "observer.hpp"
+#include "subscriber.hpp"
 
 namespace rxweb {
   
@@ -24,7 +26,7 @@ namespace rxweb {
     decltype(auto) subscriber() { return sub.get_subscriber(); }
 
     decltype(auto) get() { return sub; }
-  
+
   private:
     Subject sub;
   };

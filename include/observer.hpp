@@ -20,6 +20,11 @@ namespace rxweb {
         .map(mapFunc);
     }
 
+    explicit observer(Observable o, MapFunc mapFunc) {
+      _observer = o.observe_on(RxEventLoop)
+        .map(mapFunc);
+    }
+
     template<class Arg0>
     decltype(auto) subscribe(Arg0&& a0) {
       _observer.subscribe(a0);
