@@ -20,7 +20,7 @@ namespace rxweb {
     using RxWebSubscriber = rxweb::subscriber<T>;
     using RxWebMiddleware = rxweb::middleware<T>;
     using WebServer = SimpleWeb::Server<T>;
-    
+
   public:
     // User provides custom Middleware.
     vector<RxWebMiddleware> middlewares;
@@ -42,7 +42,7 @@ namespace rxweb {
       if (std::is_same<SocketType, SimpleWeb::HTTP>) {
         _server = make_shared<WebServer>(port, threads);
       } else {
-        _server = make_shared<WebServer>(port, threads, sertFile, privateKeyFile);
+        _server = make_shared<WebServer>(port, threads, certFile, privateKeyFile);
       }
     }
     
@@ -52,16 +52,16 @@ namespace rxweb {
       makeObserversFromMiddlewares();
 
       // Wait for all observers to finish.
-      // onNext is user defined and will perform HTTP/S response.
       auto subscriber = rxcpp::make_subscriber<RxWebTask>(
-        onNext.tapFunc,
-        [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
+        [](RxWebTask& t) { }, //noop,
+        [](const std::exception_ptr& e) { std::cout << "Error!" << std::endl; }
       );
-
-      // create a new thread for every chunk {rxweb::task}
-      rxcpp::observable<>::iterate(v)
-        //.concat(RxEventLoop)
-        .concat(RxNewThread)        
+      
+      // Create a new thread for every chunk {rxweb::task}.
+      // Merge then concat will process observables in sequence.
+      auto vals = rxcpp::observable<>::iterate(v)
+        .merge(RxNewThread)
+        .concat()
         .subscribe(subscriber);
 
       // Defaults: 1 endpoint for POST/GET
@@ -83,7 +83,7 @@ namespace rxweb {
     
     rxweb::subject<T> sub;
     std::vector<rxcpp::observable<RxWebTask>> v;
-
+    
     /*
       Using makeObserversFromMiddlewares() will wait for all middlewares to complete.
     */
@@ -93,6 +93,9 @@ namespace rxweb {
         RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
         v.emplace_back(observer.observable());
       });
+      // Last Observer is the one that will respond to client after all middlwares have been processed.
+      RxWebObserver lastObserver(sub.observable(), onNext.mapFunc);
+      v.emplace_back(lastObserver.observable());
     }
 
     /*
@@ -108,6 +111,9 @@ namespace rxweb {
         RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
         observer.subscribe(rxwebSubscriber);
       });
+      // Last Observer is the one that will respond to client after all middlwares have been processed.
+      RxWebObserver lastObserver(sub.observable(), onNext.mapFunc);
+      lastObserver.subscribe(rxwebSubscriber);
     }
   };
 }

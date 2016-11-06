@@ -23,11 +23,13 @@ int main() {
 
   rxweb::server<SimpleWeb::HTTP> server(8080, 1);
   
-  server.onNext = { 
-    [](WebTask& t) {
+  server.onNext = {
+    [](WebTask& t)->WebTask& {
       const std::string ok("OK");
+      cout << "SIZE " << (*t.ss).str() << endl;;
       *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << ((*(t.ss)).str().size() + ok.length()) << "\r\n\r\n" << ok << (*(t.ss)).str();
-    } 
+      return t;
+    }
   };
 
   server.middlewares = {
@@ -70,7 +72,7 @@ int main() {
   std::string json_string = "{\"firstName\": \"John\",\"lastName\": \"Smith\",\"age\": 25}";
   
   // Use async++
-  async::parallel_for(async::irange(0, 5), [&json_string](int x) {
+  async::parallel_for(async::irange(0, 1), [&json_string](int x) {
     try {
       HttpClient client("localhost:8080");
       auto r2 = client.request("POST", "/string", json_string);
