@@ -11,7 +11,17 @@
 #include "subscriber.hpp"
 
 namespace rxweb {
-  
+
+  template<typename T>
+  struct Route {
+    using WebAction = std::function<void(shared_ptr<typename SimpleWeb::ServerBase<T>::Response>, shared_ptr<typename SimpleWeb::ServerBase<T>::Request>)>;
+
+    string expression;
+    string verb;
+    WebAction action;
+    Route(string expression_, string verb_, WebAction action_) : expression(expression_), verb(verb_), action(action_) {}
+  };
+
   template<typename T>
   class server {
     using SocketType = SimpleWeb::ServerBase<T>;
@@ -27,6 +37,9 @@ namespace rxweb {
 
     // Middleware that will handle the HTTP/S response. 
     RxWebMiddleware onNext;
+
+    // User Defined Routes.
+    vector<Route<T>> routes;
     
     explicit server(int _port, int _threads) : port(_port), threads(_threads) {
       _server = make_shared<WebServer>(port, threads);
@@ -46,6 +59,16 @@ namespace rxweb {
       }
     }
     
+    void applyRoutes() {
+      std::for_each(routes.begin(), routes.end(), [&, this](const Route<T>& r) {
+        _server->resource[r.expression][r.verb] = r.action;
+      });
+    }
+
+    rxweb::subject<T> getSubject() {
+      return sub;
+    }
+
     void start() {
       
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
@@ -57,11 +80,11 @@ namespace rxweb {
         [](const std::exception_ptr& e) { std::cout << "Error!" << std::endl; }
       );
       
-      // Create a new thread for every chunk {rxweb::task}.
       // Merge then concat will process observables in sequence.
+      // Use the default scheduler.
+      // Must not create new thread or use thread pool.      
       auto vals = rxcpp::observable<>::iterate(v)
-        .merge(RxNewThread)
-        .concat()
+        .merge()
         .subscribe(subscriber);
 
       // Defaults: 1 endpoint for POST/GET
@@ -73,6 +96,9 @@ namespace rxweb {
       _server->default_resource["GET"] = [](shared_ptr<SocketType::Response> response, shared_ptr<SocketType::Request> request) {
         *response << "HTTP/1.1 200 OK\r\nContent-Length: " << 0 << "\r\n\r\n";
       };
+
+      // Apply user-defined routes
+      applyRoutes();
 
       _server->start();
     }

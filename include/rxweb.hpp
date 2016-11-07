@@ -11,7 +11,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.3.0";
+  static string version = "0.4.0";
 
   template<typename T>
   struct task {
@@ -31,6 +31,7 @@ namespace rxweb {
     shared_ptr<typename SocketType::Response> response;
     shared_ptr<typename SocketType::Request> request;
     shared_ptr<std::stringstream> ss;
+    string type;
     shared_ptr<json> data;
   };
 
