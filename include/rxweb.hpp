@@ -1,11 +1,13 @@
 #pragma once
 
 #include <rxcpp/rx.hpp>
+#include "json.hpp"
 
 decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
 decltype(auto) RxNewThread = rxcpp::observe_on_new_thread();
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace rxweb {
   
@@ -15,16 +17,21 @@ namespace rxweb {
   struct task {
     using SocketType = SimpleWeb::ServerBase<T>;
 
-    task() {}
+    task() {
+      ss = make_shared<stringstream>();
+      data = make_shared<json>();
+    }
     task(
       shared_ptr<typename SocketType::Request> req,
       shared_ptr<typename SocketType::Response> resp
     ) : request(req), response(resp) {
       ss = make_shared<stringstream>();
+      data = make_shared<json>();
     }
     shared_ptr<typename SocketType::Response> response;
     shared_ptr<typename SocketType::Request> request;
     shared_ptr<std::stringstream> ss;
+    shared_ptr<json> data;
   };
 
   template<typename T>
