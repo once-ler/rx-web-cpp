@@ -15,6 +15,7 @@ namespace rxweb {
   struct task {
     using SocketType = SimpleWeb::ServerBase<T>;
 
+    task() {}
     task(
       shared_ptr<typename SocketType::Request> req,
       shared_ptr<typename SocketType::Response> resp
