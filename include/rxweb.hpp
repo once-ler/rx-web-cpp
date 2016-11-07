@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rxcpp/rx.hpp>
+
 decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
 decltype(auto) RxNewThread = rxcpp::observe_on_new_thread();
 
