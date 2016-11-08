@@ -72,7 +72,6 @@ namespace rxweb {
     void start() {
       
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
-      // makeObserversFromMiddlewares();
       makeObserversAndSubscribeFromMiddlewares();
 
       // Wait for all observers to finish.
@@ -81,13 +80,6 @@ namespace rxweb {
         [](const std::exception_ptr& e) { std::cout << "Error!" << std::endl; }
       );
       
-      // Merge then concat will process observables in sequence.
-      /*
-      auto vals = rxcpp::observable<>::iterate(v)
-        .merge(RxEventLoop)
-        .subscribe(subscriber);
-      */
-
       // Defaults: 1 endpoint for POST/GET
       _server->default_resource["POST"] = [this](std::shared_ptr<SocketType::Response> response, std::shared_ptr<SocketType::Request> request) {
         auto t = RxWebTask{ request, response };
@@ -107,43 +99,20 @@ namespace rxweb {
     int port, threads;
     std::string certFile, privateKeyFile, socketType;
     shared_ptr<WebServer> _server;
-    
     rxweb::subject<T> sub;
-    std::vector<rxcpp::observable<RxWebTask>> v;
     
-    /*
-      Using makeObserversFromMiddlewares() will wait for all middlewares to complete.
-    */
-    void makeObserversFromMiddlewares() {
-      // Create Observers that react to subscriber broadcast.
-      std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
-        RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
-        v.emplace_back(observer.observable());
-      });
-      // Last Observer is the one that will respond to client after all middlwares have been processed.
-      RxWebObserver lastObserver(sub.observable(), onNext.filterFunc, onNext.mapFunc);
-      v.emplace_back(lastObserver.observable());
-    }
-
     /*
       Using makeObserversAndSubscribeFromMiddlewares() will not wait for all middlewares to complete.
     */
     void makeObserversAndSubscribeFromMiddlewares() {
-      // No subscription, observers does nothing.
-      // RxWebSubscriber subr;
-      // auto rxwebSubscriber = subr.create();
-
+      // No subscription, observers does nothing.      
       // Create Observers that react to subscriber broadcast.
       std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
-        // RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
         RxWebObserver observer(sub.observable(), route.filterFunc);
-        // observer.subscribe(rxwebSubscriber);
         observer.subscribe(route.subscribeFunc);
       });
       // Last Observer is the one that will respond to client after all middlwares have been processed.
-      // RxWebObserver lastObserver(sub.observable(), onNext.filterFunc, onNext.mapFunc);
       RxWebObserver lastObserver(sub.observable(), onNext.filterFunc);
-      // lastObserver.subscribe(rxwebSubscriber);
       lastObserver.subscribe(onNext.subscribeFunc);
     }
   };

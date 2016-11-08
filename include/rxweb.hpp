@@ -11,7 +11,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.4.0";
+  static string version = "0.5.0";
 
   template<typename T>
   struct task {
@@ -40,26 +40,17 @@ namespace rxweb {
     using SocketType = SimpleWeb::ServerBase<T>;
     using RxWebTask = rxweb::task<T>;
     using FilterFunc = std::function<bool(RxWebTask&)>;
-    using MapFunc = std::function<RxWebTask&(RxWebTask&)>;
     using SubscribeFunc = std::function<void(RxWebTask&)>;
     
     FilterFunc filterFunc;
-    MapFunc mapFunc;
     SubscribeFunc subscribeFunc;
     
     middleware() = default;
 
     middleware(
       FilterFunc _filterFunc,
-      MapFunc _mapFunc
-    ) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}
-        
-    middleware(
-      FilterFunc _filterFunc,
       SubscribeFunc _subscribeFunc
     ) : filterFunc(_filterFunc), subscribeFunc(_subscribeFunc) {}
-
-    middleware(MapFunc _mapFunc) : mapFunc(_mapFunc) {}
 
     middleware(FilterFunc _filterFunc) : filterFunc(_filterFunc) {}
   };
