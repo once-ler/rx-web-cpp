@@ -41,9 +41,11 @@ namespace rxweb {
     using RxWebTask = rxweb::task<T>;
     using FilterFunc = std::function<bool(RxWebTask&)>;
     using MapFunc = std::function<RxWebTask&(RxWebTask&)>;
+    using SubscribeFunc = std::function<void(RxWebTask&)>;
     
     FilterFunc filterFunc;
     MapFunc mapFunc;
+    SubscribeFunc subscribeFunc;
     
     middleware() = default;
 
@@ -52,7 +54,14 @@ namespace rxweb {
       MapFunc _mapFunc
     ) : filterFunc(_filterFunc), mapFunc(_mapFunc) {}
         
+    middleware(
+      FilterFunc _filterFunc,
+      SubscribeFunc _subscribeFunc
+    ) : filterFunc(_filterFunc), subscribeFunc(_subscribeFunc) {}
+
     middleware(MapFunc _mapFunc) : mapFunc(_mapFunc) {}
+
+    middleware(FilterFunc _filterFunc) : filterFunc(_filterFunc) {}
   };
   
 }

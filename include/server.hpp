@@ -72,7 +72,8 @@ namespace rxweb {
     void start() {
       
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.
-      makeObserversFromMiddlewares();
+      // makeObserversFromMiddlewares();
+      makeObserversAndSubscribeFromMiddlewares();
 
       // Wait for all observers to finish.
       auto subscriber = rxcpp::make_subscriber<RxWebTask>(
@@ -81,11 +82,11 @@ namespace rxweb {
       );
       
       // Merge then concat will process observables in sequence.
-      // Use the default scheduler.
-      // Must not create new thread or use thread pool.      
+      /*
       auto vals = rxcpp::observable<>::iterate(v)
-        .merge()
+        .merge(RxEventLoop)
         .subscribe(subscriber);
+      */
 
       // Defaults: 1 endpoint for POST/GET
       _server->default_resource["POST"] = [this](std::shared_ptr<SocketType::Response> response, std::shared_ptr<SocketType::Request> request) {
@@ -120,7 +121,7 @@ namespace rxweb {
         v.emplace_back(observer.observable());
       });
       // Last Observer is the one that will respond to client after all middlwares have been processed.
-      RxWebObserver lastObserver(sub.observable(), onNext.mapFunc);
+      RxWebObserver lastObserver(sub.observable(), onNext.filterFunc, onNext.mapFunc);
       v.emplace_back(lastObserver.observable());
     }
 
@@ -129,17 +130,21 @@ namespace rxweb {
     */
     void makeObserversAndSubscribeFromMiddlewares() {
       // No subscription, observers does nothing.
-      RxWebSubscriber subr;
-      auto rxwebSubscriber = subr.create();
+      // RxWebSubscriber subr;
+      // auto rxwebSubscriber = subr.create();
 
       // Create Observers that react to subscriber broadcast.
       std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
-        RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
-        observer.subscribe(rxwebSubscriber);
+        // RxWebObserver observer(sub.observable(), route.filterFunc, route.mapFunc);
+        RxWebObserver observer(sub.observable(), route.filterFunc);
+        // observer.subscribe(rxwebSubscriber);
+        observer.subscribe(route.subscribeFunc);
       });
       // Last Observer is the one that will respond to client after all middlwares have been processed.
-      RxWebObserver lastObserver(sub.observable(), onNext.mapFunc);
-      lastObserver.subscribe(rxwebSubscriber);
+      // RxWebObserver lastObserver(sub.observable(), onNext.filterFunc, onNext.mapFunc);
+      RxWebObserver lastObserver(sub.observable(), onNext.filterFunc);
+      // lastObserver.subscribe(rxwebSubscriber);
+      lastObserver.subscribe(onNext.subscribeFunc);
     }
   };
 }

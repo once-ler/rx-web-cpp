@@ -24,6 +24,11 @@ namespace rxweb {
       _observer = o.observe_on(RxEventLoop)
         .map(mapFunc);
     }
+
+    explicit observer(Observable o, FilterFunc filterFunc) {
+      _observer = o.observe_on(RxEventLoop)
+        .filter(filterFunc);
+    }
     
     template<class Arg0>
     decltype(auto) subscribe(Arg0&& a0) {
