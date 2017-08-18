@@ -10,6 +10,7 @@
 #include "client_http.hpp"
 #include "rxweb.hpp"
 #include "server.hpp"
+#include "wsserver.hpp"
 
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
 

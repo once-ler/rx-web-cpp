@@ -35,5 +35,8 @@
     <ClInclude Include="include\server.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\wsserver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

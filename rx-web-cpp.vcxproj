@@ -83,14 +83,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../Simple-Web-Server;../../../../local/boost_1_62_0;../RxCpp/Rx/v2/src;../asyncplusplus/include;include;../json/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../openssl-1.0.1u-vs2015/include64;../Simple-WebSocket-Server;../Simple-Web-Server;../../../../local/boost_1_62_0;../RxCpp/Rx/v2/src;../asyncplusplus/include;include;../json/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0601;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../../../local/boost_1_62_0/lib64-msvc-14.0;../asyncplusplus/build/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>async++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../../openssl-1.0.1u-vs2015/lib64;../../../../local/boost_1_62_0/lib64-msvc-14.0;../asyncplusplus/build/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ssleay32MDd.lib;libeay32MDd.lib;async++.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy /E /Y "..\asyncplusplus\build\Debug\async++.dll" "$(TargetDir)"</Command>
@@ -118,7 +118,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../Simple-Web-Server;../../../../local/boost_1_62_0;../RxCpp/Rx/v2/src;../asyncplusplus/include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../openssl-1.0.1u-vs2015/include64;../Simple-WebSocket-Server;../Simple-Web-Server;../../../../local/boost_1_62_0;../RxCpp/Rx/v2/src;../asyncplusplus/include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0601;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
@@ -127,8 +127,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../../../local/boost_1_62_0/lib64-msvc-14.0;../asyncplusplus/build/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>async++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../../openssl-1.0.1u-vs2015/lib64;../../../../local/boost_1_62_0/lib64-msvc-14.0;../asyncplusplus/build/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ssleay32MD.lib;libeay32MD.lib;async++.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>xcopy /E /Y "..\asyncplusplus\build\Debug\async++.dll" "$(TargetDir)"</Command>
@@ -143,6 +143,7 @@
     <ClInclude Include="include\server.hpp" />
     <ClInclude Include="include\subject.hpp" />
     <ClInclude Include="include\subscriber.hpp" />
+    <ClInclude Include="include\wsserver.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
