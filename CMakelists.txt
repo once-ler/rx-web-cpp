@@ -1,0 +1,7 @@
+cmake_host_system_information(VERSION 3.0)
+
+project(rx-web-cpp-exmaple)
+
+set(SOURCE test.cpp)
+
+add_executable(${PROJECT_NAME} ${SOURCE})

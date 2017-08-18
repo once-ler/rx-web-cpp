@@ -11,7 +11,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.5.0";
+  static string version = "0.5.1";
 
   template<typename T>
   struct task {

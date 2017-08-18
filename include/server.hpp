@@ -41,8 +41,10 @@ namespace rxweb {
     // User Defined Routes.
     vector<Route<T>> routes;
     
-    explicit server(int _port, int _threads) : port(_port), threads(_threads) {
-      _server = make_shared<WebServer>(port, threads);
+    explicit server(int _port, int _threads = 1) : port(_port), threads(_threads) {
+      _server = make_shared<WebServer>();
+      _server->config.port = port;
+      _server->config.thread_pool_size = threads;
     }
 
     explicit server(
@@ -53,9 +55,13 @@ namespace rxweb {
       ) : port(_port), threads(_threads), certFile(_certFile), privateKeyFile(_privateKeyFile) {
       // Ignore certs if HTTP is specified.
       if (std::is_same<SocketType, SimpleWeb::HTTP>) {
-        _server = make_shared<WebServer>(port, threads);
+        _server = make_shared<WebServer>();
+        _server->config.port = port;
+        _server->config.thread_pool_size = threads;
       } else {
-        _server = make_shared<WebServer>(port, threads, certFile, privateKeyFile);
+        _server = make_shared<WebServer>(certFile, privateKeyFile);
+        _server->config.port = port;
+        _server->config.thread_pool_size = threads;
       }
     }
     
