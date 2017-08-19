@@ -16,7 +16,25 @@ namespace rxweb {
       rxcpp::composite_subscription cs;
       return rxcpp::make_subscriber<RxWebTask>(
         [cs, this](RxWebTask& t) {
-        // cout << (*(t.ss)).str() << endl;
+        std::cout << "async subscriber thread -> " << hasher(std::this_thread::get_id()) << std::endl;
+      },
+        [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }
+      );
+    }
+  };
+
+  template<typename T>
+  class wssubscriber {
+  public:
+    // using SocketType = SimpleWeb::ServerBase<T>;
+    using RxWsTask = rxweb::wstask<T>;
+
+    explicit wssubscriber() {}
+
+    decltype(auto) create() {
+      rxcpp::composite_subscription cs;
+      return rxcpp::make_subscriber<RxWsTask>(
+        [cs, this](RxWsTask& t) {
         std::cout << "async subscriber thread -> " << hasher(std::this_thread::get_id()) << std::endl;
       },
         [](const std::exception_ptr& e) { std::cout << "error." << std::endl; }

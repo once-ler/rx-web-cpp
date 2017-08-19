@@ -11,6 +11,7 @@
 #include "rxweb.hpp"
 #include "server.hpp"
 #include "wsserver.hpp"
+// #include "base.hpp"
 
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
 
@@ -20,7 +21,7 @@ int main() {
 
   using WebTask = rxweb::task<SimpleWeb::HTTP>;
   using SocketType = SimpleWeb::ServerBase<SimpleWeb::HTTP>;
-
+  
   rxweb::server<SimpleWeb::HTTP> server(8080, 1);
   
   server.routes = {

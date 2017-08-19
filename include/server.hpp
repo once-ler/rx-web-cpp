@@ -11,7 +11,6 @@
 #include "subscriber.hpp"
 
 namespace rxweb {
-
   template<typename T>
   struct Route {
     using WebAction = std::function<void(shared_ptr<typename SimpleWeb::ServerBase<T>::Response>, shared_ptr<typename SimpleWeb::ServerBase<T>::Request>)>;
@@ -55,14 +54,12 @@ namespace rxweb {
       ) : port(_port), threads(_threads), certFile(_certFile), privateKeyFile(_privateKeyFile) {
       // Ignore certs if HTTP is specified.
       if (std::is_same<SocketType, SimpleWeb::HTTP>) {
-        _server = make_shared<WebServer>();
-        _server->config.port = port;
-        _server->config.thread_pool_size = threads;
+        _server = make_shared<WebServer>();        
       } else {
         _server = make_shared<WebServer>(certFile, privateKeyFile);
-        _server->config.port = port;
-        _server->config.thread_pool_size = threads;
       }
+      _server->config.port = port;
+      _server->config.thread_pool_size = threads;
     }
     
     void applyRoutes() {
