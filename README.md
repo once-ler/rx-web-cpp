@@ -1,10 +1,10 @@
 rx-web-cpp
 ==========
 
-####A web server powered by [RxCpp](https://github.com/Reactive-Extensions/RxCpp)
+#### A web and WebSocket server powered by [RxCpp](https://github.com/Reactive-Extensions/RxCpp)
 
 __Warning: This is experimental and WIP!__
-#####Implementation
+##### Implementation
 
 * One endpoint.
 * All requests must be HTTP POST.
