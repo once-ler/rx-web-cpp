@@ -13,6 +13,9 @@
 #include "wsserver.hpp"
 #include "client_ws.hpp"
 
+using namespace std;
+using json = nlohmann::json;
+
 using HttpClient = SimpleWeb::Client<SimpleWeb::HTTP>;
 using WsClient = SimpleWeb::SocketClient<SimpleWeb::WS>;
 
@@ -34,7 +37,6 @@ shared_ptr<WsClient> makeClient(const string url, const string message) {
   client->on_open = [=](shared_ptr<WsClient::Connection> connection) {
     cout << "Client: Opened connection" << endl;
 
-    // string message = "Hello";
     cout << "Client: Sending message: \"" << message << "\"" << endl;
 
     auto send_stream = make_shared<WsClient::SendStream>();
@@ -62,24 +64,41 @@ int testWebSocketServer() {
 
   server.routes = {
     {
-      "^/echo/?$",
+      "^/string/?$",
       [&](std::shared_ptr<WebSocketType::Connection> connection, std::shared_ptr<WebSocketType::Message> message) {
-        // auto sub = server.getSubject();
-        // auto t = WebSocketTask{ connection, message };
+        auto sub = server.getSubject();
+        auto t = WebSocketTask{ connection, message };
+        auto msg = message->string();
+        t.ss = make_shared<stringstream>(msg);
+
+        t.type = "RESPOND";
+        sub.subscriber().on_next(t);
       }
     },
     {
-      "^/echo2/?$",
+      "^/json/?$",
       [&](std::shared_ptr<WebSocketType::Connection> connection, std::shared_ptr<WebSocketType::Message> message) {
-        // auto sub = server.getSubject();
-        // auto t = WebSocketTask{ connection, message };
+        auto sub = server.getSubject();
+        auto t = WebSocketTask{ connection, message };
+        auto msg = message->string();
+        
+        try {
+          auto j = json::parse(msg);
+          t.data = make_shared<json>(j);
+        } catch (...) {
+          auto e = R"({"error": "parse error"})"_json;
+          t.data = make_shared<json>(e);
+        }
+
+        t.type = "RESPOND";
+        sub.subscriber().on_next(t);
       }
     }
   };
 
   server.middlewares = {
     {
-      [](WebSocketTask& t)->bool { return (t.type == "ON_MESSAGE"); },
+      [](WebSocketTask& t)->bool { return (t.type == "RESPOND"); },
       [&server](WebSocketTask& t) {
     
         // auto message_str = t.message->string();
@@ -99,10 +118,6 @@ int testWebSocketServer() {
               "Error: " << ec << ", error message: " << ec.message() << endl;
           }
         });
-
-        // *(t.ss) << "1\n";
-        // t.type = "2";
-        // server.getSubject().subscriber().on_next(t);
       }
     }
   };
@@ -114,11 +129,11 @@ int testWebSocketServer() {
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   // Get a client.
-  auto client_0 = makeClient("localhost:8080/echo", "Hello");
+  auto client_0 = makeClient("localhost:8080/string", "Hello");
   client_0->start();
 
   // Get a another client.
-  auto client_1 = makeClient("localhost:8080/echo2", "World");
+  auto client_1 = makeClient("localhost:8080/json", R"({"foo": "bar"})");
   client_1->start();
 
   // Get server thread info

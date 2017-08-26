@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <regex>
 #include <vector>
 #include <memory>
 #include <rxcpp/rx.hpp>
@@ -10,6 +11,7 @@
 #include "observer.hpp"
 #include "subscriber.hpp"
 
+using namespace std;
 using json = nlohmann::json;
 
 namespace rxweb {
@@ -42,24 +44,16 @@ namespace rxweb {
       cout << connection->path << endl;
       cout << connection->query_string << endl;
 
-      auto sub = getSubject();
-      auto t = RxWsTask{ connection, message };
-      auto msg = message->string();
-
-      try {
-        auto j = json::parse(msg);
-        t.data = make_shared<json>(j);
-      } catch (...) {
-        t.ss = make_shared<stringstream>(msg);
+      for (auto& route : routes) {
+        regex path_rx(route.expression);
+        bool m = regex_search(connection->path, path_rx);
+        if (m) route.action(connection, message);
       }
-
-      t.type = "ON_MESSAGE";
-      sub.subscriber().on_next(t);
     };
 
     ErrorHandler handleError = [this](shared_ptr<WsServer::Connection> connection, const SimpleWeb::error_code &ec) {
       auto sub = getSubject();
-      auto t = RxWsTask{ connection, nullptr };
+      auto t = RxWsTask{ connection };
       json j = {
         { "errorCode", {
             "name", ec.category().name(),
@@ -74,14 +68,14 @@ namespace rxweb {
 
     OpenHandler handleOpen = [this](shared_ptr<WsServer::Connection> connection) {
       auto sub = getSubject();
-      auto t = RxWsTask{ connection, nullptr };
+      auto t = RxWsTask{ connection };
       t.type = "ON_OPEN";
       sub.subscriber().on_next(t);
     };
 
     CloseHandler handleClose = [this](shared_ptr<WsServer::Connection> connection, int status, const string& reason) {
       auto sub = getSubject();
-      auto t = RxWsTask{ connection, nullptr };
+      auto t = RxWsTask{ connection };
       json j = {
         { "status", status }
       };

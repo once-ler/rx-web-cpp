@@ -13,7 +13,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.6.0";
+  static string version = "0.6.1";
 
   template<typename T>
   struct task {
@@ -47,7 +47,7 @@ namespace rxweb {
     }
     wstask(
       shared_ptr<typename SimpleWeb::SocketServerBase<T>::Connection> conn,
-      shared_ptr<typename SimpleWeb::SocketServerBase<T>::Message> msg
+      shared_ptr<typename SimpleWeb::SocketServerBase<T>::Message> msg = nullptr
     ) : connection(conn), message(msg) {
       ss = make_shared<stringstream>();
       data = make_shared<json>();
