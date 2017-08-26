@@ -93,7 +93,9 @@
       <AdditionalDependencies>ssleay32MDd.lib;libeay32MDd.lib;async++.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>xcopy /E /Y "..\asyncplusplus\build\Debug\async++.dll" "$(TargetDir)"</Command>
+      <Command>xcopy /E /Y "..\asyncplusplus\build\Debug\async++.dll" "$(TargetDir)"
+xcopy /E /Y "..\..\..\..\openssl-1.0.1u-vs2015\bin64\libeay32MDd.dll" "$(TargetDir)"
+xcopy /E /Y "..\..\..\..\openssl-1.0.1u-vs2015\bin64\ssleay32MDd.dll" "$(TargetDir)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
