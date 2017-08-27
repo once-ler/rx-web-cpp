@@ -30,8 +30,8 @@ shared_ptr<WsClient> makeClient(const string url, const string message) {
 
     cout << "Client: Message received: \"" << message_str << "\"" << endl;
 
-    cout << "Client: Sending close connection" << endl;
-    connection->send_close(1000);
+    // cout << "Client: Sending close connection" << endl;
+    // connection->send_close(1000);
   };
 
   client->on_open = [=](shared_ptr<WsClient::Connection> connection) {
@@ -92,6 +92,8 @@ int testWebSocketServer() {
 
         t.type = "RESPOND";
         sub.subscriber().on_next(t);
+
+        server.broadcast("Broadcasting from /json path");
       }
     }
   };
@@ -101,7 +103,6 @@ int testWebSocketServer() {
       [](WebSocketTask& t)->bool { return (t.type == "RESPOND"); },
       [&server](WebSocketTask& t) {
     
-        // auto message_str = t.message->string();
         auto message_str = (*(t.data)).is_null() ? (*(t.ss)).str() : (*(t.data)).dump(2);
 
         cout << "Server: Message received: \"" << message_str << "\" from " << t.connection.get() << endl;
@@ -119,6 +120,17 @@ int testWebSocketServer() {
           }
         });
       }
+    },
+    {
+      [](WebSocketTask& t)->auto { return t.type == "BROADCAST"; },
+      [&server](WebSocketTask& t) {
+        auto send_stream = make_shared<WebSocketType::SendStream>();
+        *send_stream << "BROADCASTING";
+        
+        //for (auto& e : t.endpoint->get_connections()) {
+        //  e->send(send_stream, [](const SimpleWeb::error_code &ec) {});
+        // }
+      }
     }
   };
 
@@ -130,15 +142,22 @@ int testWebSocketServer() {
 
   // Get a client.
   auto client_0 = makeClient("localhost:8080/string", "Hello");
-  client_0->start();
+  thread client_0_thread([&client_0]() {
+    client_0->start();
+  });
 
   // Get a another client.
   auto client_1 = makeClient("localhost:8080/json", R"({"foo": "bar"})");
-  client_1->start();
+  thread client_1_thread([&client_1]() {
+    client_1->start();
+  });
 
   // Get server thread info
   std::cout << "wsserver thread -> " << hasher(server_thread.get_id()) << std::endl;
   server_thread.join();
+
+  client_0_thread.join();
+  client_1_thread.join();
 
   return 0;
 }

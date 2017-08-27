@@ -15,15 +15,19 @@ using namespace std;
 using json = nlohmann::json;
 
 namespace rxweb {
-  // T: SimpleWeb::WS or SimpleWeb::WSS
+  // T: SimpleWeb::WS || SimpleWeb::WSS
   template<typename T>
-  struct WsRoute {
+  class WsRoute {
+    template<typename T>friend class wsserver;
+
     using SocketType = SimpleWeb::SocketServerBase<T>;
     using WsAction = std::function<void(shared_ptr<typename SocketType::Connection>, shared_ptr<typename SocketType::Message>)>;
-
+  public:
+    WsRoute(string expression_, WsAction action_) : expression(expression_), action(action_) {}
     string expression;
     WsAction action;
-    WsRoute(string expression_, WsAction action_) : expression(expression_), action(action_) {}
+
+  private:
   };
 
   template<typename T>
@@ -44,10 +48,10 @@ namespace rxweb {
       cout << connection->path << endl;
       cout << connection->query_string << endl;
 
-      for (auto& route : routes) {
-        regex path_rx(route.expression);
+      for (auto& r : routes) {
+        regex path_rx(r.expression);
         bool m = regex_search(connection->path, path_rx);
-        if (m) route.action(connection, message);
+        if (m) r.action(connection, message);
       }
     };
 
@@ -83,7 +87,6 @@ namespace rxweb {
       t.type = "ON_CLOSE";
       sub.subscriber().on_next(t);
     };
-
 
   public:
     // User provides custom Middleware.
@@ -127,13 +130,22 @@ namespace rxweb {
         endpoint.on_message = handleMesssge;
         endpoint.on_error = handleError;
         endpoint.on_close = handleClose;
-
-        // endpoints[endpoint] = r.action;
       });
     }
 
     rxweb::wssubject<T> getSubject() {
       return sub;
+    }
+        
+    void broadcast(const string message) {
+      for (auto& r : routes) {
+        auto& endpoint = _server->endpoint[r.expression];
+        for (auto& e : endpoint.get_connections()) {
+          auto send_stream = make_shared<SocketType::SendStream>();
+          *send_stream << message;
+          e->send(send_stream, [](const SimpleWeb::error_code &ec) {});
+        }
+      }
     }
 
     void start() {
