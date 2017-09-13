@@ -104,6 +104,8 @@ namespace rxweb {
     shared_ptr<WebServer> _server;
     rxweb::subject<T> sub;
     
+    std::function<void(std::exception_ptr&)> defaultOnErrorFunc = [](const std::exception_ptr& e) { rxweb::handleEptr(e); };
+
     /*
       Using makeObserversAndSubscribeFromMiddlewares() will not wait for all middlewares to complete.
     */
@@ -112,11 +114,11 @@ namespace rxweb {
       // Create Observers that react to subscriber broadcast.
       std::for_each(middlewares.begin(), middlewares.end(), [&](auto& route) {
         RxWebObserver observer(sub.observable(), route.filterFunc);
-        observer.subscribe(route.subscribeFunc);
+        observer.subscribe(route.subscribeFunc, defaultOnErrorFunc);
       });
       // Last Observer is the one that will respond to client after all middlwares have been processed.
       RxWebObserver lastObserver(sub.observable(), onNext.filterFunc);
-      lastObserver.subscribe(onNext.subscribeFunc);
+      lastObserver.subscribe(onNext.subscribeFunc, defaultOnErrorFunc);
     }
   };
 }

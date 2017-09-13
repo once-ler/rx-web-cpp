@@ -17,9 +17,9 @@ namespace rxweb {
         .filter(filterFunc);
     }
     
-    template<class Arg0>
-    decltype(auto) subscribe(Arg0&& a0) {
-      _observer.subscribe(a0);
+    template<class... ArgN>
+    decltype(auto) subscribe(ArgN&&... an) {
+      _observer.subscribe(an...);
     }
 
     decltype(auto) observable() {

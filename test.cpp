@@ -83,7 +83,7 @@ int testWebSocketServer() {
         auto msg = message->string();
         
         try {
-          auto j = json::parse(msg);
+          auto j = json::parse(msg.c_str());
           t.data = make_shared<json>(j);
         } catch (...) {
           auto e = R"({"error": "parse error"})"_json;

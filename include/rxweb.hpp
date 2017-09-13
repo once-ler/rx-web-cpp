@@ -13,7 +13,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.6.3";
+  static string version = "0.6.4";
 
   template<typename T>
   struct task {
@@ -101,4 +101,14 @@ namespace rxweb {
     wsmiddleware(FilterFunc _filterFunc) : filterFunc(_filterFunc) {}
   };
   
+  // Default Exception Handler Handler
+  void handleEptr(std::exception_ptr eptr) {
+    try {
+      if (eptr) {
+        std::rethrow_exception(eptr);
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Caught exception \"" << e.what() << "\"\n";
+    }
+  }
 }
