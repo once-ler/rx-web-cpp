@@ -18,7 +18,7 @@ namespace rxweb {
     }
     
     template<class... ArgN>
-    decltype(auto) subscribe(ArgN&&... an) {
+    void subscribe(ArgN&&... an) {
       _observer.subscribe(an...);
     }
 
@@ -44,7 +44,7 @@ namespace rxweb {
     }
 
     template<class Arg0>
-    decltype(auto) subscribe(Arg0&& a0) {
+    void subscribe(Arg0&& a0) {
       _observer.subscribe(a0);
     }
 
