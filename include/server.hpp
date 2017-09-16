@@ -14,10 +14,10 @@ namespace rxweb {
   template<typename T>
   struct Route {
     using WebAction = std::function<void(shared_ptr<typename SimpleWeb::ServerBase<T>::Response>, shared_ptr<typename SimpleWeb::ServerBase<T>::Request>)>;
-
     string expression;
     string verb;
     WebAction action;
+    Route() = default;
     Route(string expression_, string verb_, WebAction action_) : expression(expression_), verb(verb_), action(action_) {}
   };
 
@@ -53,7 +53,7 @@ namespace rxweb {
       const string _privateKeyFile
       ) : port(_port), threads(_threads), certFile(_certFile), privateKeyFile(_privateKeyFile) {
       // Ignore certs if HTTP is specified.
-      if (std::is_same<SocketType, SimpleWeb::HTTP>) {
+      if (std::is_same<SocketType, SimpleWeb::HTTP>::value == true) {
         _server = make_shared<WebServer>();        
       } else {
         _server = make_shared<WebServer>(certFile, privateKeyFile);
@@ -84,12 +84,12 @@ namespace rxweb {
       );
       
       // Defaults: 1 endpoint for POST/GET
-      _server->default_resource["POST"] = [this](std::shared_ptr<SocketType::Response> response, std::shared_ptr<SocketType::Request> request) {
+      _server->default_resource["POST"] = [this](std::shared_ptr<typename SocketType::Response> response, std::shared_ptr<typename SocketType::Request> request) {
         auto t = RxWebTask{ request, response };
         sub.subscriber().on_next(t);
       };
 
-      _server->default_resource["GET"] = [](shared_ptr<SocketType::Response> response, shared_ptr<SocketType::Request> request) {
+      _server->default_resource["GET"] = [](shared_ptr<typename SocketType::Response> response, shared_ptr<typename SocketType::Request> request) {
         *response << "HTTP/1.1 200 OK\r\nContent-Length: " << 0 << "\r\n\r\n";
       };
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <rxcpp/rx.hpp>
 #include "json.hpp"
 #include "server_http.hpp"
@@ -14,6 +15,9 @@ using json = nlohmann::json;
 namespace rxweb {
   
   static string version = "0.6.4";
+
+  // Just a utility.
+  std::hash<std::thread::id> hasher;
 
   template<typename T>
   struct task {
@@ -30,8 +34,8 @@ namespace rxweb {
       ss = make_shared<stringstream>();
       data = make_shared<json>();
     }
-    shared_ptr<typename SocketType::Response> response;
     shared_ptr<typename SocketType::Request> request;
+    shared_ptr<typename SocketType::Response> response;
     shared_ptr<std::stringstream> ss;
     string type;
     shared_ptr<json> data;
@@ -76,16 +80,16 @@ namespace rxweb {
       FilterFunc _filterFunc,
       SubscribeFunc _subscribeFunc
     ) : filterFunc(_filterFunc), subscribeFunc(_subscribeFunc) {}
-
-    middleware(FilterFunc _filterFunc) : filterFunc(_filterFunc) {}
+    
+    middleware(FilterFunc _filterFunc) : filterFunc(_filterFunc) {}    
   };
 
   template<typename T>
   struct wsmiddleware {
     using SocketType = SimpleWeb::SocketServerBase<T>;
     using RxWsTask = rxweb::wstask<T>;
-    using FilterFunc = std::function<bool(RxWsTask&)>;
-    using SubscribeFunc = std::function<void(RxWsTask&)>;
+    using FilterFunc = std::function<bool(const RxWsTask&)>;
+    using SubscribeFunc = std::function<void(const RxWsTask&)>;
 
     FilterFunc filterFunc;
     SubscribeFunc subscribeFunc;
