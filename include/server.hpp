@@ -36,7 +36,7 @@ namespace rxweb {
 
     // Middleware that will handle the HTTP/S response. 
     RxWebMiddleware onNext;
-
+    
     // User Defined Routes.
     vector<Route<T>> routes;
     

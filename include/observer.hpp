@@ -8,7 +8,7 @@ namespace rxweb {
   class observer {
     using SocketType = SimpleWeb::ServerBase<T>;
     using RxWebTask = rxweb::task<T>;
-    using FilterFunc = std::function<bool(const RxWebTask)>;
+    using FilterFunc = std::function<bool(const RxWebTask&)>;
     using Observable = rxcpp::observable<RxWebTask>;
 
   public:
