@@ -34,7 +34,7 @@ namespace rxweb {
   class wsobserver {
     using SocketType = SimpleWeb::SocketServerBase<T>;
     using RxWsTask = rxweb::wstask<T>;
-    using FilterFunc = std::function<bool(const RxWsTask)>;
+    using FilterFunc = std::function<bool(const RxWsTask&)>;
     using Observable = rxcpp::observable<RxWsTask>;
 
   public:

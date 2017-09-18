@@ -1,8 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <utility>
-#include <vector>
 #include <rxcpp/rx.hpp>
 #include "json.hpp"
 #include "server_http.hpp"
@@ -65,28 +63,17 @@ namespace rxweb {
     string type;
     shared_ptr<json> data;    
   };
-    
+  
   template<typename T>
   struct middleware {
     using SocketType = SimpleWeb::ServerBase<T>;
     using RxWebTask = rxweb::task<T>;
     using FilterFunc = std::function<bool(const RxWebTask&)>;
     using SubscribeFunc = std::function<void(const RxWebTask&)>;
-    
+  
     FilterFunc filterFunc;
     SubscribeFunc subscribeFunc;
-    
-    /*
-    template<class U>
-    middleware(std::initializer_list<U>);
-    */
 
-    middleware<T>& operator=(middleware<T>&& other) {
-      this->filterFunc(foward(other.filterFunc));
-      this->subscribeFunc(foward(other.subscribeFunc));
-      return *this;
-    }    
-    
     middleware() = default;
 
     middleware(
