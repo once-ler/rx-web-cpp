@@ -72,6 +72,10 @@ namespace rxweb {
       return sub;
     }
 
+    void dispatch(const RxWebTask& t) {
+      sub.subscriber().on_next(t);
+    } 
+
     void start() {
       
       // Depending on the observer's filter function, each observer will act or ignore any incoming web request.

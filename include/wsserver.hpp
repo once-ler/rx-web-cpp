@@ -136,7 +136,11 @@ namespace rxweb {
     rxweb::wssubject<T> getSubject() {
       return sub;
     }
-        
+    
+    void dispatch(const RxWsTask& t) {
+      sub.subscriber().on_next(t);
+    }
+    
     void broadcast(const string message) {
       for (auto& r : routes) {
         auto& endpoint = _server->endpoint[r.expression];
