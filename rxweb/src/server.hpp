@@ -5,10 +5,10 @@
 #include <memory>
 #include <rxcpp/rx.hpp>
 #include "server_http.hpp"
-#include "rxweb.hpp"
-#include "subject.hpp"
-#include "observer.hpp"
-#include "subscriber.hpp"
+#include "rxweb/src/rxweb.hpp"
+#include "rxweb/src/subject.hpp"
+#include "rxweb/src/observer.hpp"
+#include "rxweb/src/subscriber.hpp"
 
 namespace rxweb {
   template<typename T>

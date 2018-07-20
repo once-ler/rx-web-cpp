@@ -1,8 +1,8 @@
 #pragma once
 
-#include "rxweb.hpp"
-#include "observer.hpp"
-#include "subscriber.hpp"
+#include "rxweb/src/rxweb.hpp"
+#include "rxweb/src/observer.hpp"
+#include "rxweb/src/subscriber.hpp"
 
 namespace rxweb {
   

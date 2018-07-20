@@ -6,10 +6,10 @@
 #include <memory>
 #include <rxcpp/rx.hpp>
 #include "server_ws.hpp"
-#include "rxweb.hpp"
-#include "subject.hpp"
-#include "observer.hpp"
-#include "subscriber.hpp"
+#include "rxweb/src/rxweb.hpp"
+#include "rxweb/src/subject.hpp"
+#include "rxweb/src/observer.hpp"
+#include "rxweb/src/subscriber.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -18,8 +18,7 @@ namespace rxweb {
   // T: SimpleWeb::WS || SimpleWeb::WSS
   template<typename T>
   class WsRoute {
-    template<typename T>friend class wsserver;
-
+    template<typename U> friend class wsserver;
     using SocketType = SimpleWeb::SocketServerBase<T>;
     using WsAction = std::function<void(shared_ptr<typename SocketType::Connection>, shared_ptr<typename SocketType::Message>)>;
   public:
@@ -44,7 +43,7 @@ namespace rxweb {
     using CloseHandler = function<void(shared_ptr<typename SocketType::Connection>, int, const string&)>;
     using WsAction = std::function<void(shared_ptr<typename SocketType::Connection>, shared_ptr<typename SocketType::Message>)>;
 
-    MessageHandler handleMesssge = [this](shared_ptr<SocketType::Connection> connection, shared_ptr<SocketType::Message> message) {
+    MessageHandler handleMesssge = [this](shared_ptr<typename SocketType::Connection> connection, shared_ptr<typename SocketType::Message> message) {
       cout << connection->path << endl;
       cout << connection->query_string << endl;
 
@@ -55,7 +54,7 @@ namespace rxweb {
       }
     };
 
-    ErrorHandler handleError = [this](shared_ptr<WsServer::Connection> connection, const SimpleWeb::error_code &ec) {
+    ErrorHandler handleError = [this](shared_ptr<typename WsServer::Connection> connection, const SimpleWeb::error_code &ec) {
       auto sub = getSubject();
       auto t = RxWsTask{ connection };
       json j = {
@@ -70,14 +69,14 @@ namespace rxweb {
       sub.subscriber().on_next(t);
     };
 
-    OpenHandler handleOpen = [this](shared_ptr<WsServer::Connection> connection) {
+    OpenHandler handleOpen = [this](shared_ptr<typename WsServer::Connection> connection) {
       auto sub = getSubject();
       auto t = RxWsTask{ connection };
       t.type = "ON_OPEN";
       sub.subscriber().on_next(t);
     };
 
-    CloseHandler handleClose = [this](shared_ptr<WsServer::Connection> connection, int status, const string& reason) {
+    CloseHandler handleClose = [this](shared_ptr<typename WsServer::Connection> connection, int status, const string& reason) {
       auto sub = getSubject();
       auto t = RxWsTask{ connection };
       json j = {
@@ -114,7 +113,8 @@ namespace rxweb {
       const string _privateKeyFile
     ) : port(_port), threads(_threads), certFile(_certFile), privateKeyFile(_privateKeyFile) {
       // Ignore certs if HTTP is specified.
-      if (std::is_same<SocketType, SimpleWeb::WS>) {
+      // if (std::is_same<SocketType, SimpleWeb::WS>) {
+      if (std::is_same<SocketType, SimpleWeb::WS>::value == true) {
         _server = make_shared<WsServer>();        
       } else {
         _server = make_shared<WsServer>(certFile, privateKeyFile);
@@ -145,7 +145,7 @@ namespace rxweb {
       for (auto& r : routes) {
         auto& endpoint = _server->endpoint[r.expression];
         for (auto& e : endpoint.get_connections()) {
-          auto send_stream = make_shared<SocketType::SendStream>();
+          auto send_stream = make_shared<typename SocketType::SendStream>();
           *send_stream << message;
           e->send(send_stream, [](const SimpleWeb::error_code &ec) {});
         }

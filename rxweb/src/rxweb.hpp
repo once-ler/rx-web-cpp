@@ -14,7 +14,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.6.6";
+  static string version = "0.7.0";
 
   // Just a utility.
   std::hash<std::thread::id> hasher;

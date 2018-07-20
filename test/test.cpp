@@ -1,5 +1,3 @@
-#pragma once
-
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -8,9 +6,9 @@
 #include <async++.h>
 #include "server_http.hpp"
 #include "client_http.hpp"
-#include "rxweb.hpp"
-#include "server.hpp"
-#include "wsserver.hpp"
+#include "rxweb/src/rxweb.hpp"
+#include "rxweb/src/server.hpp"
+#include "rxweb/src/wsserver.hpp"
 #include "client_ws.hpp"
 
 using namespace std;
@@ -100,8 +98,8 @@ int testWebSocketServer() {
 
   server.middlewares = {
     {
-      [](WebSocketTask& t)->bool { return (t.type == "RESPOND"); },
-      [&server](WebSocketTask& t) {
+      [](const WebSocketTask& t)->bool { return (t.type == "RESPOND"); },
+      [&server](const WebSocketTask& t) {
     
         auto message_str = (*(t.data)).is_null() ? (*(t.ss)).str() : (*(t.data)).dump(2);
 
@@ -122,8 +120,8 @@ int testWebSocketServer() {
       }
     },
     {
-      [](WebSocketTask& t)->auto { return t.type == "BROADCAST"; },
-      [&server](WebSocketTask& t) {
+      [](const WebSocketTask& t)->auto { return t.type == "BROADCAST"; },
+      [&server](const WebSocketTask& t) {
         auto send_stream = make_shared<WebSocketType::SendStream>();
         *send_stream << "BROADCASTING";
         
@@ -186,8 +184,8 @@ int main() {
   };
 
   server.onNext = {
-    [](WebTask& t)->bool { return (t.request->path.rfind("/string") != std::string::npos && t.type == "respond"); },
-    [](WebTask& t) {
+    [](const WebTask& t)->bool { return (t.request->path.rfind("/string") != std::string::npos && t.type == "respond"); },
+    [](const WebTask& t) {
       const std::string ok("OK");
       cout << "SIZE " << (*t.ss).str() << endl;;
       *(t.response) << "HTTP/1.1 200 OK\r\nContent-Length: " << ((*(t.ss)).str().size() + ok.length()) << "\r\n\r\n" << ok << (*(t.ss)).str();
@@ -196,35 +194,43 @@ int main() {
 
   server.middlewares = {
     {
-      [](WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "1"); },
-      [&server](WebTask& t) { 
-        *(t.ss) << "1\n";
-        t.type = "2";
-        server.getSubject().subscriber().on_next(t);
+      [](const WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "1"); },
+      [&server](const WebTask& t) {
+        auto cp = t;
+
+        *(cp.ss) << "1\n";
+        cp.type = "2";
+        server.getSubject().subscriber().on_next(cp);
       }
     },
     {
-      [](WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "2"); },
-      [&server](WebTask& t) { 
-        *(t.ss) << "22\n";
-        t.type = "3";
-        server.getSubject().subscriber().on_next(t);
+      [](const WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "2"); },
+      [&server](const WebTask& t) { 
+        auto cp = t;
+        
+        *(cp.ss) << "22\n";
+        cp.type = "3";
+        server.getSubject().subscriber().on_next(cp);
       }
     },
     {
-      [](WebTask& t)->bool { return (t.request->path.rfind("/json") == std::string::npos && t.type == "3"); },
-      [&server](WebTask& t) {
-        *(t.ss) << "333\n";
-        t.type = "4";
-        server.getSubject().subscriber().on_next(t);
+      [](const WebTask& t)->bool { return (t.request->path.rfind("/json") == std::string::npos && t.type == "3"); },
+      [&server](const WebTask& t) {
+        auto cp = t;
+                
+        *(cp.ss) << "333\n";
+        cp.type = "4";
+        server.getSubject().subscriber().on_next(cp);
       }
     },
     {
-      [](WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "4"); },
-      [&server](WebTask& t) { 
-        *(t.ss) << "333\n";
-        t.type = "4";
-        server.getSubject().subscriber().on_next(t);
+      [](const WebTask& t)->bool { return (t.request->path.rfind("/string") == std::string::npos && t.type == "4"); },
+      [&server](const WebTask& t) {
+        auto cp = t;
+        
+        *(cp.ss) << "333\n";
+        cp.type = "4";
+        server.getSubject().subscriber().on_next(cp);
       }
     }
   };
