@@ -1,9 +1,13 @@
 #pragma once
 
+#ifndef RXWEB_H
+#define	RXWEB_H
+
 #include <iostream>
 #include <rxcpp/rx.hpp>
 #include "json.hpp"
 #include "server_http.hpp"
+#include "server_https.hpp"
 #include "server_ws.hpp"
 
 decltype(auto) RxEventLoop = rxcpp::observe_on_event_loop();
@@ -14,7 +18,7 @@ using json = nlohmann::json;
 
 namespace rxweb {
   
-  static string version = "0.7.1";
+  static string version = "0.7.2";
 
   // Just a utility.
   std::hash<std::thread::id> hasher;
@@ -164,3 +168,5 @@ namespace rxweb {
     }
   }
 }
+
+#endif
